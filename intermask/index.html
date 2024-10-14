@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="description"
+        content="A novel framework for human interaction generation using collaborative masked modeling in the discrete space, which explicitly models spatio-temporal dependencies within and between the interacting individuals.">
+  <meta name="keywords" content="InterMask, Human Motion Generation, Motion Synthesis, Human Interaction Generation, Masked Generative Transformer, Text-driven Generation, Vector Quantized VAE">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>InterMask: 3D Human Interaction Generation via Collaborative Masked Modelling</title>
+
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-PYVRSFMDRL"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+
+    function gtag() {
+      dataLayer.push(arguments);
+    }
+
+    gtag('js', new Date());
+
+    gtag('config', 'G-PYVRSFMDRL');
+  </script>
+
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro"
+        rel="stylesheet">
+
+  <link rel="stylesheet" href="./static/css/bulma.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-carousel.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-slider.min.css">
+  <link rel="stylesheet" href="./static/css/fontawesome.all.min.css">
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="./static/css/index.css">
+  <link rel="icon" href="./static/images/favicon.svg">
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script defer src="./static/js/fontawesome.all.min.js"></script>
+  <script src="./static/js/bulma-carousel.min.js"></script>
+  <script src="./static/js/bulma-slider.min.js"></script>
+  <script src="./static/js/index.js"></script>
+</head>
+<body>
+
+<!-- <nav class="navbar" role="navigation" aria-label="main navigation">
+  <div class="navbar-brand">
+    <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+    </a>
+  </div>
+  <div class="navbar-menu">
+    <div class="navbar-start" style="flex-grow: 1; justify-content: center;">
+      <a class="navbar-item" href="https://keunhong.com">
+      <span class="icon">
+          <i class="fas fa-home"></i>
+      </span>
+      </a>
+
+      <div class="navbar-item has-dropdown is-hoverable">
+        <a class="navbar-link">
+          More Research
+        </a>
+        <div class="navbar-dropdown">
+          <a class="navbar-item" href="https://hypernerf.github.io">
+            HyperNeRF
+          </a>
+          <a class="navbar-item" href="https://nerfies.github.io">
+            Nerfies
+          </a>
+          <a class="navbar-item" href="https://latentfusion.github.io">
+            LatentFusion
+          </a>
+          <a class="navbar-item" href="https://photoshape.github.io">
+            PhotoShape
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</nav> -->
+
+
+<section class="hero">
+  <div class="hero-body">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered">
+        <div class="column has-text-centered">
+          <h1 class="title is-1 publication-title">InterMask: 3D Human Interaction Generation via Collaborative Masked Modelling</h1>
+          <div class="is-size-5 publication-authors">
+            <span class="author-block">
+              <a href="https://gohar-malik.github.io/">Muhammad Gohar Javed</a>, </span>
+            <span class="author-block">
+              <a href="https://ericguo5513.github.io/">Chuan Guo</a>, </span>
+            <span class="author-block">
+              <a href="https://vision-and-learning-lab-ualberta.github.io/author/li-cheng/">Li Cheng</a>, </span>
+            <span class="author-block">
+              <a href="https://www.ece.ualberta.ca/~xingyu/index.html">Xingyu Li</a>
+            </span>
+          </div>
+
+          <div class="is-size-5 publication-authors">
+            <span class="author-block">University of Alberta, Canada</span>
+          </div>
+
+          <div class="column has-text-centered">
+            <div class="publication-links">
+              <!-- PDF Link. -->
+              <!-- <span class="link-block">
+                <a href="https://arxiv.org/pdf/2011.12948"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fas fa-file-pdf"></i>
+                  </span>
+                  <span>Paper</span>
+                </a>
+              </span> -->
+              <span class="link-block">
+                <a href="https://arxiv.org/abs/2011.12948"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="ai ai-arxiv"></i>
+                  </span>
+                  <span>arXiv</span>
+                </a>
+              </span>
+              <!-- Video Link.
+              <span class="link-block">
+                <a href="https://www.youtube.com/watch?v=MrKrnHhk8IA"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fab fa-youtube"></i>
+                  </span>
+                  <span>Video</span>
+                </a>
+              </span> -->
+              <!-- Code Link. -->
+              <span class="link-block">
+                <a href="https://github.com/gohar-malik/intermask"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fab fa-github"></i>
+                  </span>
+                  <span>Code (coming soon...)</span>
+                  </a>
+              </span>
+              <!-- Dataset Link. -->
+              <!-- <span class="link-block">
+                <a href="https://github.com/google/nerfies/releases/tag/0.1"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="far fa-images"></i>
+                  </span>
+                  <span>Data</span>
+                  </a> -->
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="hero teaser">
+  <div class="container is-max-desktop">
+    <div class="hero-body">
+      <img src="./static/images/teaser.png"
+           alt="InterMask teaser image."
+           class="teaser-image"/>
+      <h2 class="subtitle has-text-centered">
+        <span class="dnerf">InterMask</span> generates high fidelity text-conditioned 3D human interactions, with accurate spatial and temporal coordination
+      </h2>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <!-- Abstract. -->
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <!-- <h2 class="title is-3">Abstract</h2> -->
+        <div class="content has-text-justified">
+          <p>
+            Generating realistic 3D human-human interactions from textual descriptions remains a challenging task. Existing approaches, typically based on diffusion models, often generate unnatural and unrealistic results. In this work, we introduce <b>InterMask</b>, a novel framework for generating human interactions using collaborative masked modeling in discrete space. InterMask first employs a VQ-VAE to transform each motion sequence into a 2D discrete motion token map. Unlike traditional 1D VQ token maps, it better preserves fine-grained spatio-temporal details and promotes <em>spatial awareness</em> within each token. Building on this representation, InterMask utilizes a generative masked modeling framework to collaboratively model the tokens of two interacting individuals. This is achieved by employing a transformer architecture specifically designed to capture complex spatio-temporal interdependencies. During training, it randomly masks the motion tokens of both individuals and learns to predict them. In inference, starting from fully masked sequences, it progressively fills in the tokens for both individuals. With its enhanced motion representation, dedicated architecture, and effective learning strategy, InterMask achieves state-of-the-art results, producing high-fidelity and diverse human interactions. It outperforms previous methods, achieving an FID of <b>5.154</b> (vs 5.535 for in2IN) on the InterHuman dataset and <b>0.399</b> (vs 5.207 for InterGen) on the InterX dataset. Additionally, InterMask seamlessly supports reaction generation without the need for model redesign or fine-tuning.
+          </p>
+        </div>
+      </div>
+    </div>
+    <!--/ Abstract. -->
+
+    <!-- Paper video. -->
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Approach Overview</h2>
+        <img src="./static/images/overview.png"
+           alt="InterMask teaser image."
+           class="teaser-image"/>
+      <h2 class="subtitle has-text-centered">
+        Overview of <span class="dnerf">InterMask</span>. (a) Individual motions are quantized through vector quantization (VQ) to obtain 2D tokens for each. (b) Motion tokens from both individuals are flattened, concatenated, masked and predicted collaboratively by the Inter-M Transformer. (c) Each block in Inter-M Transformer consists of Self, Spatio-Temporal and Cross Attention modules to learn complex spatio-temporal dependencies within and between both interacting individuals.
+      </h2>
+      </div>
+    </div>
+    <!--/ Paper video. -->
+  </div>
+</section>
+
+<section class="hero is-light is-small">
+  <div class="hero-body">
+    <div class="container">
+      <h2 class="title is-3"><center>Generation Gallery</center></h2>
+      <h2 class="title is-4"><center>Everyday Actions</center></h2>
+      <div id="results-carousel" class="carousel results-carousel">
+        
+        <div class="container">
+          <div class="item item-steve">
+            <video poster="" id="steve" autoplay controls muted loop playsinline height="100%">
+              <source src="./static/videos/animation1_27.mp4"
+                      type="video/mp4">
+            </video>
+          </div>
+          <p><center>Two people are <strong>spinning around in clockwise direction</strong></center></p>
+        </div>
+
+        <div class="container">
+          <div class="item item-steve">
+            <video poster="" id="steve" autoplay controls muted loop playsinline height="100%">
+              <source src="./static/videos/animation0_40.mp4"
+                      type="video/mp4">
+            </video>
+          </div>
+          <p><center>Both play <strong> rock paper scissors</strong> with their <strong>right hands</strong></center></p>
+        </div>
+
+        <div class="container">
+          <div class="item item-steve">
+            <video poster="" id="steve" autoplay controls muted loop playsinline height="100%">
+              <source src="./static/videos/animation0_46.mp4"
+                      type="video/mp4">
+            </video>
+          </div>
+          <p><center>The first <strong><span style="color:#47b1d5;">runs to their right</span></strong> and the other begins to <strong><span style="color:#c05252;">chase them</span></strong></center></p>
+        </div>
+
+        <div class="container">
+          <div class="item item-steve">
+            <video poster="" id="steve" autoplay controls muted loop playsinline height="100%">
+              <source src="./static/videos/animation2_37.mp4"
+                      type="video/mp4">
+            </video>
+          </div>
+          <p><center>One person <strong><span style="color:#c05252;">takes <span style="color:red;">five</span> steps</span></strong> to get to the other person's back, who is <strong><span style="color:#47b1d5;">sitting in a chair holding something in their hands</span></strong></center></p>
+        </div>
+
+        <div class="container">
+          <div class="item item-steve">
+            <video poster="" id="steve" autoplay controls muted loop playsinline height="100%">
+              <source src="./static/videos/animation2_33.mp4"
+                      type="video/mp4">
+            </video>
+          </div>
+          <p><center>One person <strong><span style="color:#c05252;">tosses something</span></strong> to the other and the other <strong><span style="color:#47b1d5;">catches it</span></strong></center></p>
+        </div>
+
+        <div class="container">
+          <div class="item item-steve">
+            <video poster="" id="steve" autoplay controls muted loop playsinline height="100%">
+              <source src="./static/videos/infer_3.mp4"
+                      type="video/mp4">
+            </video>
+          </div>
+          <p><center>The two are blaming each other and <strong>having an intense argument</strong></center></p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+<!-- <br> -->
+
+
+
+<section class="hero is-light is-small">
+  <div class="hero-body">
+    <div class="container">
+      <h2 class="title is-4"><center>Combat</center></h2>
+      <div id="results-carousel" class="carousel results-carousel">
+        
+        <div class="container">
+          <div class="item item-steve">
+            <video poster="" id="steve" autoplay controls muted loop playsinline height="100%">
+              <source src="./static/videos/animation0_24.mp4"
+                      type="video/mp4">
+            </video>
+          </div>
+          <p><center>First person <strong><span style="color:#47b1d5;">lifts right leg to strike</span></strong>, while other person <strong><span style="color:#c05252;">responds by raising their right leg</span></strong></center></p>
+        </div>
+
+        <div class="container">
+          <div class="item item-steve">
+            <video poster="" id="steve" autoplay controls muted loop playsinline height="100%">
+              <source src="./static/videos/animation2_01.mp4"
+                      type="video/mp4">
+            </video>
+          </div>
+          <p><center>Two people <strong>move towards their right</strong>, they <strong> face each other</strong> and prepare for the next move</center></p>
+        </div>
+
+        <div class="container">
+          <div class="item item-steve">
+            <video poster="" id="steve" autoplay controls muted loop playsinline height="100%">
+              <source src="./static/videos/infer_2_0.mp4"
+                      type="video/mp4">
+            </video>
+          </div>
+          <p><center>Two fencers <strong>engage in a thrilling duel</strong>, their sabres clashing and sparking as they strive for victory</center></p>
+        </div>
+
+        <div class="container">
+          <div class="item item-steve">
+            <video poster="" id="steve" autoplay controls muted loop playsinline height="100%">
+              <source src="./static/videos/animation2_06.mp4"
+                      type="video/mp4">
+            </video>
+          </div>
+          <p><center>The other person <strong><span style="color:#c05252;">strikes one with their right hand</span></strong>, and one <strong><span style="color:#47b1d5;">blocks it with their left hand</span></strong>. then they separate</center></p>
+        </div>
+
+        <div class="container">
+          <div class="item item-steve">
+            <video poster="" id="steve" autoplay controls muted loop playsinline height="100%">
+              <source src="./static/videos/animation1_42.mp4"
+                      type="video/mp4">
+            </video>
+          </div>
+          <p><center>One <strong><span style="color:#47b1d5;">takes a step forward and strikes with right hand</span></strong>, the other <strong><span style="color:#c05252;">tries to block and takes a step back</span></strong></center></p>
+        </div>
+
+        <div class="container">
+          <div class="item item-steve">
+            <video poster="" id="steve" autoplay controls muted loop playsinline height="100%">
+              <source src="./static/videos/animation2_15.mp4"
+                      type="video/mp4">
+            </video>
+          </div>
+          <p><center>One person <strong><span style="color:#47b1d5;">strikes the other</span></strong> with a sword and the other <strong><span style="color:#c05252;">dodges</span></strong></center></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<section class="hero is-light is-small">
+  <div class="hero-body">
+    <div class="container">
+      <h2 class="title is-4"><center>Dance</center></h2>
+      <div id="results-carousel" class="carousel results-carousel">
+        
+        <div class="container">
+          <div class="item item-steve">
+            <video poster="" id="steve" autoplay controls muted loop playsinline height="100%">
+              <source src="./static/videos/infer_9.mp4"
+                      type="video/mp4">
+            </video>
+          </div>
+          <p><center>Both are performing <strong>synchronized dance moves</strong></center></p>
+        </div>
+
+        <div class="container">
+          <div class="item item-steve">
+            <video poster="" id="steve" autoplay controls muted loop playsinline height="100%">
+              <source src="./static/videos/animation1_08.mp4"
+                      type="video/mp4">
+            </video>
+          </div>
+          <p><center>They both <strong>swing their hands four times</strong> and finally <strong>raise their right feet</strong></center></p>
+        </div>
+
+        <div class="container">
+          <div class="item item-steve">
+            <video poster="" id="steve" autoplay controls muted loop playsinline height="100%">
+              <source src="./static/videos/animation0_07.mp4"
+                      type="video/mp4">
+            </video>
+          </div>
+          <p><center>While <strong>slow dancing</strong> one <strong><span style="color:#47b1d5;">takes a step with his right foot</span></strong></center></p>
+        </div>
+
+        <div class="container">
+          <div class="item item-steve">
+            <video poster="" id="steve" autoplay controls muted loop playsinline height="100%">
+              <source src="./static/videos/animation2_02.mp4"
+                      type="video/mp4">
+            </video>
+          </div>
+          <p><center>One takes a <strong><span style="color:#47b1d5;">step forward with the <span style="color:red;">left</span> foot</span></strong>, and <strong><span style="color:#c05252;">another with the <span style="color:red;">right</span> foot</span></strong>, they reach out with <strong><span style="color:#47b1d5;">the first person's <span style="color:red;">left</span> hand</span></strong> grabbing the <strong><span style="color:#c05252;">other person's <span style="color:red;">right</span> arm</span></strong> and their other arms crosses</center></p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+
+
+
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3"><center>Comparison</center></h2>
+    <p>
+      We compare <span class="dnerf">InterMask</span> against a strong diffusion model baseline approach, <a href="https://tr3e.github.io/intergen-page/">InterGen</a>. In contrast to InterGen, InterMask exhibits superior motion and interaction quality, text adherence and avoidance of implicit biases.
+    </p>
+
+
+    <br>
+    <p><center>
+      The first person is <strong><span style="color:#47b1d5;">sitting on a chair</span></strong>, their hands resting in their lap, while the other person <strong><span style="color:#c05252;">takes a step towards them</span></strong>
+    </center></p>
+    <div class="columns is-centered">
+      <div class="column">
+        <div class="content has-text-centered">
+          <p>
+            InterGen
+          </p>
+          <video id="dollyzoom" autoplay controls muted loop playsinline width="80%">
+            <source src="./static/videos/animation2_13_intergen.mp4"
+                    type="video/mp4">
+          </video>
+        </div>
+      </div>
+      <div class="column">
+        <div class="content has-text-centered">
+          <p>
+            <strong>InterMask</strong>
+          </p>
+          <video id="dollyzoom" autoplay controls muted loop playsinline width="80%">
+            <source src="./static/videos/animation2_13.mp4"
+                    type="video/mp4">
+          </video>
+        </div>
+      </div>
+    </div>
+    
+    <br>
+    <p><center>
+      Two people <strong>bow</strong> to each other
+    </center></p>
+    <div class="columns is-centered">
+      <div class="column">
+        <div class="content has-text-centered">
+          <p>
+            InterGen
+          </p>
+          <video id="dollyzoom" autoplay controls muted loop playsinline width="80%">
+            <source src="./static/videos/infer_5_intergen.mp4"
+                    type="video/mp4">
+          </video>
+        </div>
+      </div>
+      <div class="column">
+        <div class="content has-text-centered">
+          <p>
+            <strong>InterMask</strong>
+          </p>
+          <video id="dollyzoom" autoplay controls muted loop playsinline width="80%">
+            <source src="./static/videos/infer_5.mp4"
+                    type="video/mp4">
+          </video>
+        </div>
+      </div>
+    </div>
+
+    <br>
+    <p><center>
+      One person <strong><span style="color:#47b1d5;">sneaks up</span></strong> on <strong><span style="color:#c05252;">the other</span></strong> from behind
+    </center></p>
+    <div class="columns is-centered">
+      <div class="column">
+        <div class="content has-text-centered">
+          <p>
+            InterGen
+          </p>
+          <video id="dollyzoom" autoplay controls muted loop playsinline width="80%">
+            <source src="./static/videos/animation0_19_intergen.mp4"
+                    type="video/mp4">
+          </video>
+        </div>
+      </div>
+      <div class="column">
+        <div class="content has-text-centered">
+          <p>
+            <strong>InterMask</strong>
+          </p>
+          <video id="dollyzoom" autoplay controls muted loop playsinline width="80%">
+            <source src="./static/videos/animation0_19.mp4"
+                    type="video/mp4">
+          </video>
+        </div>
+      </div>
+    </div>
+
+    <br>
+    <p><center>
+      The first person <strong><span style="color:#47b1d5;">raises the right leg aggressively</span></strong> towards the <strong><span style="color:#c05252;">second</span></strong>
+    </center></p>
+    <div class="columns is-centered">
+      <div class="column">
+        <div class="content has-text-centered">
+          <p>
+            InterGen
+          </p>
+          <video id="dollyzoom" autoplay controls muted loop playsinline width="80%">
+            <source src="./static/videos/infer_10_intergen.mp4"
+                    type="video/mp4">
+          </video>
+        </div>
+      </div>
+      <div class="column">
+        <div class="content has-text-centered">
+          <p>
+            <strong>InterMask</strong>
+          </p>
+          <video id="dollyzoom" autoplay controls muted loop playsinline width="80%">
+            <source src="./static/videos/infer_10.mp4"
+                    type="video/mp4">
+          </video>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<section class="hero is-light is-small">
+  <div class="hero-body">
+    <div class="container">
+      <h2 class="title is-3"><center>Application: Reaction Generation</center></h2>
+      <p class="paragraph">
+        We showcase InterMask's capability to perform the <strong>reaction generation</strong> task, where the motion of one individual is generated depending on the provided reference motion of the other, <strong>with and without text descriptions</strong>. The <strong>reference</strong> motion is shown in <span style="color:#c05252;">pink</span>, and the <strong>generated</strong> motion is shown in <span style="color:#47b1d5;">blue</span>.
+      </p>
+      <br>
+      <div id="results-carousel" class="carousel results-carousel">
+        
+        <div class="container">
+          <div class="item item-steve">
+            <video poster="" id="steve" autoplay controls muted loop playsinline height="100%">
+              <source src="./static/videos/16.mp4"
+                      type="video/mp4">
+            </video>
+          </div>
+          <p><center><i>without text description</i></center></p>
+        </div>
+
+        <div class="container">
+          <div class="item item-steve">
+            <video poster="" id="steve" autoplay controls muted loop playsinline height="100%">
+              <source src="./static/videos/30.mp4"
+                      type="video/mp4">
+            </video>
+          </div>
+          <p><center>These two take a <strong>step away from eachother and stretch their arms</strong></center></p>
+        </div>
+        
+
+        <div class="container">
+          <div class="item item-steve">
+            <video poster="" id="steve" autoplay controls muted loop playsinline height="100%">
+              <source src="./static/videos/48.mp4"
+                      type="video/mp4">
+            </video>
+          </div>
+          <p><center>One person <strong><span style="color:#47b1d5;">approaches</span></strong> <strong><span style="color:#c05252;">the other</span></strong></center></p>
+        </div>
+
+
+        <div class="container">
+          <div class="item item-steve">
+            <video poster="" id="steve" autoplay controls muted loop playsinline height="100%">
+              <source src="./static/videos/42.mp4"
+                      type="video/mp4">
+            </video>
+          </div>
+          <p><center>These two <strong>raise their left hands</strong> and extend them towards the left</center></p>
+        </div>
+
+        <div class="container">
+          <div class="item item-steve">
+            <video poster="" id="steve" autoplay controls muted loop playsinline height="100%">
+              <source src="./static/videos/02.mp4"
+                      type="video/mp4">
+            </video>
+          </div>
+          <p><center><i>without text description</i></center></p>
+        </div>
+
+
+        <div class="container">
+          <div class="item item-steve">
+            <video poster="" id="steve" autoplay controls muted loop playsinline height="100%">
+              <source src="./static/videos/37.mp4"
+                      type="video/mp4">
+            </video>
+          </div>
+          <p><center>One person <strong><span style="color:#c05252;">takes 4 steps towards the other</span></strong>, while the other is <strong><span style="color:#47b1d5;">sitting on a chair holding a piece of paper</span></strong></center></p>
+        </div>
+
+       
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<section class="section" id="BibTeX">
+  <div class="container is-max-desktop content">
+    <h2 class="title">BibTeX</h2>
+    <pre><code>@article{javed2024intermask,
+  title = {InterMask: 3D Human Interaction Generation via Collaborative Masked Modelling},
+  author = {Javed, Muhammad Gohar and Guo, Chuan and Cheng, Li and Li, Xingyu},
+  year={2024},
+  eprint = {2312.00063},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.CV}
+}</code></pre>
+  </div>
+</section>
+
+
+<footer class="footer">
+  <div class="container">
+    <div class="columns is-centered">
+      <div class="column is-8">
+        <div class="content">
+          <p>
+            This website is licensed under a <a rel="license"
+                                                href="http://creativecommons.org/licenses/by-sa/4.0/">Creative
+            Commons Attribution-ShareAlike 4.0 International License</a>.
+          </p>
+          <p>
+
+            Website source code based on the Nerfies <a href="https://nerfies.github.io/">project page</a>. If you want to reuse their source code, please credit them appropriately.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
